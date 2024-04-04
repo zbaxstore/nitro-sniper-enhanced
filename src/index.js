@@ -8,11 +8,10 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. */
 
-global.regex = new RegExp(
-  /(discord\.gift\/|discord\.com\/gifts\/|discordapp\.com\/gifts\/)[^\s]+/gim,
-);
-const privnote = new RegExp(/(?<=privnote.com\/)[^\s]+/);
-const temp_pm = new RegExp(/(?<=temp.pm\/\?)[^\s]+/);
+global.regex =
+  /(discord\.gift\/|discord\.com\/gifts\/|discordapp\.com\/gifts\/)[^\s]+/gim;
+const privnote = /(?<=privnote.com\/)[^\s]+/;
+const temp_pm = /(?<=temp.pm\/\?)[^\s]+/;
 
 require("dotenv").config();
 const axios = require("axios").default;
@@ -177,6 +176,7 @@ if (replit !== "true" && replit !== "false") {
     })
     .listen(8080);
 }
+// eslint-disable-next-line consistent-return
 const paymentsourceid = (() => {
   const ressyncq = syncrq(
     "GET",

@@ -1,6 +1,6 @@
 const axios = require("axios").default;
-const logging = require("../../logging/logging");
 const fs = require("fs");
+const logging = require("../../logging/logging");
 
 function getData(msg, writeNotes, temp_pm, send_webhook_notes, user_tag) {
   console.log(temp_pm);
