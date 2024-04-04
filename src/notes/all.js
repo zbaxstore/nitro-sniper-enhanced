@@ -1,4 +1,4 @@
-const privnote = require("./websites/privnote");
-const temp_pm = require("./websites/temp_pm");
+import privnote from "./websites/privnote.js";
+import temp_pm from "./websites/temp_pm.js";
 
-module.exports = { privnote, temp_pm };
+export default { privnote, temp_pm };

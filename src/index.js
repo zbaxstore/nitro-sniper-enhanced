@@ -7,29 +7,28 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. */
+import dotenv from "dotenv";
+dotenv.config();
 
-global.regex =
-  /(discord\.gift\/|discord\.com\/gifts\/|discordapp\.com\/gifts\/)[^\s]+/gim;
-const privnote = /(?<=privnote.com\/)[^\s]+/;
-const temp_pm = /(?<=temp.pm\/\?)[^\s]+/;
-
-require("dotenv").config();
-const axios = require("axios").default;
-const rateLimit = require("axios-rate-limit");
+import axios from "axios";
+import rateLimit from "axios-rate-limit";
 
 const http = rateLimit(axios.create(), {
   maxRequests: 10,
   perMilliseconds: 60000,
 });
 
-const syncrq = require("sync-request");
-const fs = require("fs");
+import fs from "fs";
 
-const { Client } = require("discord.js-light");
-const notes = require("./notes/all");
-const { Webhook } = require("./webhooks");
-const { version } = require("../package.json");
-const logging = require("./logging/logging");
+import pkg from "discord.js-light";
+const { Client } = pkg;
+
+import notes from "./notes/all.js";
+import { Webhook } from "./webhooks.js";
+import packageJson from "../package.json" assert { type: "json" };
+
+const version = packageJson.version;
+import logging from "./logging/logging.js";
 
 const tokens = process.env.guildTokens?.split(",").filter((item) => item);
 
@@ -51,6 +50,11 @@ const {
 } = process.env;
 
 let usedTokens = [];
+
+global.regex =
+  /(discord\.gift\/|discord\.com\/gifts\/|discordapp\.com\/gifts\/)[^\s]+/gim;
+const privnote = /(?<=privnote.com\/)[^\s]+/;
+const temp_pm = /(?<=temp.pm\/\?)[^\s]+/;
 
 if (useMain === "true" && mainToken != null) tokens.unshift(mainToken);
 logging.splash();
@@ -177,38 +181,45 @@ if (replit !== "true" && replit !== "false") {
     .listen(8080);
 }
 // eslint-disable-next-line consistent-return
-const paymentsourceid = (() => {
-  const ressyncq = syncrq(
-    "GET",
-    "https://discord.com/api/v6/users/@me/billing/payment-sources",
-    {
-      headers: {
-        authorization: mainToken,
-        "user-agent": global.userAgent,
+async function getPaymentSourceId() {
+  try {
+    const response = await axios.get(
+      "https://discord.com/api/v6/users/@me/billing/payment-sources",
+      {
+        headers: {
+          authorization: mainToken,
+          "user-agent": global.userAgent,
+        },
       },
-    },
-  );
-
-  const ps = JSON.parse(ressyncq.body.toString());
-
-  if (ps.message === "401: Unauthorized") {
-    logging.fatal(`{red Main token not valid: ${ps.message}.}`);
-    logging.fatal("{red Quitting...}");
-    process.exit();
-  } else if (ps.length === 0) {
-    logging.warning(
-      "{rgb(255,245,107) Main token does not have a billing source, some codes will not be sniped.}",
     );
-    return "null";
-  } else if (ps[0]) {
+
+    const paymentSources = response.data;
+
+    if (paymentSources.length === 0) {
+      logging.warning(
+        "{rgb(255,245,107) Main token does not have a billing source, some codes will not be sniped.}",
+      );
+      return "null";
+    }
+
     logging.info("{blueBright Successfully got the payment method!.}");
-    return ps[0].id;
-  } else {
-    logging.fatal(`{red Unable to get billing source: ${JSON.stringify(ps)}.}`);
+    return paymentSources[0].id;
+  } catch (error) {
+    if (
+      error.response &&
+      error.response.data &&
+      error.response.data.message === "401: Unauthorized"
+    ) {
+      logging.fatal(
+        `{red Main token not valid: ${error.response.data.message}.}`,
+      );
+    } else {
+      logging.fatal(`{red Unable to get billing source: ${error.message}.}`);
+    }
     logging.fatal("{red Quitting...}");
     process.exit();
   }
-})();
+}
 
 // eslint-disable-next-line no-restricted-syntax
 for (const token of tokens) {
@@ -372,6 +383,9 @@ for (const token of tokens) {
         // eslint-disable-next-line no-continue
         continue;
       }
+
+      const payment_source_id = await getPaymentSourceId();
+
       http({
         url: `https://discord.com/api/v8/entitlements/gift-codes/${code}/redeem`,
         method: "POST",
@@ -383,7 +397,7 @@ for (const token of tokens) {
         },
         data: {
           channel_id: msg.channel.id,
-          payment_source_id: paymentsourceid,
+          payment_source_id,
         },
       })
         .then((res) => {

@@ -1,7 +1,10 @@
-const axios = require("axios").default;
-const CryptoJS = require("crypto-js");
-const fs = require("fs");
-const logging = require("../../logging/logging");
+import axios from "axios";
+
+import pkg from "crypto-js";
+const { AES, enc } = pkg;
+
+import { writeFile } from "fs";
+import logging from "../../logging/logging.js";
 
 const privid = new RegExp(/[^#]*/);
 const privpass = new RegExp(/[^#]*$/);
@@ -41,8 +44,8 @@ function getData(msg, writeNotes, url, send_webhook_notes, user_tag) {
         );
 
       // Decrypt gibberish-aes
-      let data = CryptoJS.AES.decrypt(res.data.data, pass);
-      data = data.toString(CryptoJS.enc.Utf8);
+      let data = AES.decrypt(res.data.data, pass);
+      data = data.toString(enc.Utf8);
       if (!data || data.length === 0)
         return logging.success(
           `{rgb(137,96,142) Sniped privnote [${id}#${pass}] - Non-existant/Already destroyed - ${
@@ -59,7 +62,7 @@ function getData(msg, writeNotes, url, send_webhook_notes, user_tag) {
       );
       if (writeNotes === "true") {
         id = id.replace(/[^/\w\s]/gi, ""); // Make id filename-safe
-        fs.writeFile(`./notes/privnote-${id}.txt`, data, (err) => {
+        writeFile(`./notes/privnote-${id}.txt`, data, (err) => {
           if (err) {
             logging.success(
               `{rgb(137,96,142) Sniped privnote [${id}#${pass}] - Couldn't save it to file because of err: ${
@@ -92,4 +95,4 @@ function getData(msg, writeNotes, url, send_webhook_notes, user_tag) {
     );
 }
 
-module.exports = { getData };
+export default getData;

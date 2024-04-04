@@ -1,6 +1,6 @@
-const axios = require("axios").default;
-const fs = require("fs");
-const logging = require("../../logging/logging");
+import axios from "axios";
+import { writeFile } from "fs";
+import logging from "../../logging/logging.js";
 
 function getData(msg, writeNotes, temp_pm, send_webhook_notes, user_tag) {
   console.log(temp_pm);
@@ -32,7 +32,7 @@ function getData(msg, writeNotes, temp_pm, send_webhook_notes, user_tag) {
 
     if (writeNotes === "true") {
       requestCode = requestCode.replace(/[^/\w\s]/gi, ""); // Make id filename-safe
-      fs.writeFile(
+      writeFile(
         `./notes/temp_pm-${requestCode.substring(0, 10)}.txt`,
         result,
         (err) => {
@@ -65,4 +65,4 @@ function getData(msg, writeNotes, temp_pm, send_webhook_notes, user_tag) {
   });
 }
 
-module.exports = { getData };
+export default getData;

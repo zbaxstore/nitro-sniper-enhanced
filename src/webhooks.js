@@ -1,5 +1,7 @@
-const { WebhookClient, MessageEmbed } = require("discord.js-light");
-const logging = require("./logging/logging");
+import pkg from "discord.js-light";
+const { WebhookClient, MessageEmbed } = pkg;
+
+import logging from "./logging/logging.js";
 
 class Webhook {
   constructor(webhookUrl, type) {
@@ -98,4 +100,4 @@ class Webhook {
   }
 }
 
-module.exports = { Webhook };
+export { Webhook };

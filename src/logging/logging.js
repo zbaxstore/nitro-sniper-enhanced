@@ -1,27 +1,42 @@
-const chalk = require("chalk");
+import chalk from "chalk";
 
-function chalkish(parts, ...substitutions) {
-  // https://gist.github.com/bennadel/71eb3670ccf51daabf1658fb13b337b1
-  const rawResults = [];
-  const cookedResults = [];
+function chalkish(template, ...substitutions) {
+  let result = template.reduce(
+    (accum, part, i) => accum + part + (substitutions[i] || ""),
+    "",
+  );
 
-  const partsLength = parts.length;
-  const substitutionsLength = substitutions.length;
+  const stylePattern = /\{([\w\\.\\(\\),\s]+?)\s(.*?)\}/g;
 
-  for (let i = 0; i < partsLength; i += 1) {
-    rawResults.push(parts.raw[i]);
-    cookedResults.push(parts[i]);
+  result = result.replace(stylePattern, (match, styleInstructions, text) => {
+    // Initial chalk function
+    let currentStyle = chalk;
 
-    if (i < substitutionsLength) {
-      rawResults.push(substitutions[i]);
-      cookedResults.push(substitutions[i]);
-    }
-  }
+    // Split style instructions (e.g., "rgb(255,255,255).bold")
+    styleInstructions.split(".").forEach((instruction) => {
+      const funcMatch = instruction.match(/^(\w+)\(([\d,\s]+)\)$/);
+      if (funcMatch) {
+        // Function-based styles (e.g., "rgb(255,255,255)")
+        const [, methodName, methodArgs] = funcMatch;
+        const args = methodArgs
+          .split(",")
+          .map((arg) => parseInt(arg.trim(), 10));
+        if (typeof currentStyle[methodName] === "function") {
+          currentStyle = currentStyle[methodName](...args);
+        }
+      } else {
+        // Simple styles (e.g., "bold")
+        if (typeof currentStyle[instruction] === "function") {
+          currentStyle = currentStyle[instruction];
+        }
+      }
+    });
 
-  const chalkParts = [cookedResults.join("")];
-  chalkParts.raw = [rawResults.join("")];
+    // Apply the style to the text
+    return currentStyle(text);
+  });
 
-  return chalk(chalkParts);
+  return result;
 }
 
 const splash = () => {
@@ -63,7 +78,7 @@ const success = (msg) => {
   genericPrefixed(`{rgb(28,232,41) [+]} ${msg}`);
 };
 
-module.exports = {
+export default {
   splash,
   info,
   error,
