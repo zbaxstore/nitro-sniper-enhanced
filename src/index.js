@@ -25,7 +25,7 @@ const { Client } = pkg;
 
 import notes from "./notes/all.js";
 import { Webhook } from "./webhooks.js";
-import packageJson from "../package.json" assert { type: "json" };
+import packageJson from "../package.json";
 
 const version = packageJson.version;
 import logging from "./logging/logging.js";
